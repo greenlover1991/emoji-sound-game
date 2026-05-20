@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, Music, MessageCircle, Home } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Music, Play, Home } from 'lucide-react'
 import Link from 'next/link'
 import type { Category } from '@/lib/emoji-data'
 import { useSound } from '@/lib/use-sound'
@@ -118,10 +118,10 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
           <button
             onClick={handleSpeak}
             disabled={isSpeaking}
-            className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-speak text-white shadow-lg transition-all active:scale-95 disabled:opacity-70 sm:h-24 sm:w-24`}
+            className={`relative flex h-20 w-20 items-center justify-center rounded-full ${getCategoryColor()} text-white shadow-lg transition-all active:scale-95 disabled:opacity-70 sm:h-24 sm:w-24`}
             aria-label={`Say ${currentItem.name}`}
           >
-            <MessageCircle className={`h-10 w-10 sm:h-12 sm:w-12 ${isSpeaking ? 'animate-pulse' : ''}`} />
+            <Play className={`h-10 w-10 sm:h-12 sm:w-12 ${isSpeaking ? 'animate-pulse' : ''}`} />
             {isSpeaking && (
               <span className="absolute inset-0 animate-ping rounded-full bg-current opacity-30" />
             )}
