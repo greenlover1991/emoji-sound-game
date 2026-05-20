@@ -1,12 +1,28 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { EmojiItem } from './emoji-data'
 
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentAudioItem, setCurrentAudioItem] = useState<EmojiItem | null>(null)
 
   const playSound = useCallback((item: EmojiItem) => {
+    // If the same item is playing, toggle pause/play
+    if (currentAudioItem?.name === item.name && audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      } else {
+        audioRef.current.play().catch((error) => {
+          console.log('[v0] Audio play failed:', error.name, error.message)
+        })
+        setIsPlaying(true)
+      }
+      return
+    }
+
     // Stop any currently playing sound
     if (audioRef.current) {
       audioRef.current.pause()
@@ -22,6 +38,7 @@ export function useSound() {
       // Create new audio element for the URL
       const audio = new Audio()
       audioRef.current = audio
+      setCurrentAudioItem(item)
       
       // Set up event handlers before setting src
       audio.oncanplaythrough = () => {
@@ -29,17 +46,24 @@ export function useSound() {
         audio.play().catch((error) => {
           console.log('[v0] Audio play failed:', error.name, error.message)
         })
+        setIsPlaying(true)
+      }
+      
+      audio.onended = () => {
+        console.log('[v0] Audio ended')
+        setIsPlaying(false)
       }
       
       audio.onerror = (e) => {
         console.log('[v0] Audio error:', audio.error?.message || 'Unknown error')
+        setIsPlaying(false)
       }
       
       // Use your proxy route instead of direct Wikimedia URL
       audio.src = `/api/sound?file=${encodeURIComponent(filename)}`
       audio.load()
     }
-  }, [])
+  }, [isPlaying, currentAudioItem])
 
   const speakName = useCallback((name: string) => {
     // Cancel any ongoing speech
@@ -68,8 +92,10 @@ export function useSound() {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
+    setIsPlaying(false)
+    setCurrentAudioItem(null)
     window.speechSynthesis.cancel()
   }, [])
 
-  return { playSound, speakName, stopSound }
+  return { playSound, speakName, stopSound, isPlaying }
 }
