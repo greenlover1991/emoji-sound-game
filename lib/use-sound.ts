@@ -16,6 +16,9 @@ export function useSound() {
     if (item.soundUrl) {
       console.log('[v0] Playing sound from:', item.soundUrl)
       
+      // Extract filename from Wikimedia URL
+      const filename = item.soundUrl.split('/').pop() || ''
+      
       // Create new audio element for the URL
       const audio = new Audio()
       audioRef.current = audio
@@ -32,8 +35,8 @@ export function useSound() {
         console.log('[v0] Audio error:', audio.error?.message || 'Unknown error')
       }
       
-      // Set source and load
-      audio.src = item.soundUrl
+      // Use your proxy route instead of direct Wikimedia URL
+      audio.src = `/api/sound?file=${encodeURIComponent(filename)}`
       audio.load()
     }
   }, [])
