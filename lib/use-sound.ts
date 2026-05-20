@@ -47,12 +47,14 @@ export function useSound() {
     utterance.pitch = 1.1 // Slightly higher pitch
     utterance.volume = 1.0
     
-    // Try to use a friendly voice
+    // Try to use English UK voice
     const voices = window.speechSynthesis.getVoices()
-    const englishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) 
+    const ukVoice = voices.find(v => v.lang === 'en-GB') 
+      || voices.find(v => v.lang.startsWith('en-GB'))
+      || voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) 
       || voices.find(v => v.lang.startsWith('en'))
-    if (englishVoice) {
-      utterance.voice = englishVoice
+    if (ukVoice) {
+      utterance.voice = ukVoice
     }
     
     window.speechSynthesis.speak(utterance)
