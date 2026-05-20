@@ -12,34 +12,33 @@ interface EmojiPlayerProps {
 
 export function EmojiPlayer({ category }: EmojiPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [bouncing, setBouncing] = useState(false)
-  const { playSound, speakName } = useSound()
+  const { playSound, speakName, stopSound, isPlaying } = useSound()
 
   const currentItem = category.items[currentIndex]
 
   const goNext = useCallback(() => {
+    stopSound() // Stop audio when navigating
     setCurrentIndex((prev) => (prev + 1) % category.items.length)
     setBouncing(true)
     setTimeout(() => setBouncing(false), 300)
-  }, [category.items.length])
+  }, [category.items.length, stopSound])
 
   const goPrevious = useCallback(() => {
+    stopSound() // Stop audio when navigating
     setCurrentIndex((prev) => (prev - 1 + category.items.length) % category.items.length)
     setBouncing(true)
     setTimeout(() => setBouncing(false), 300)
-  }, [category.items.length])
+  }, [category.items.length, stopSound])
 
   const handlePlaySound = useCallback(() => {
-    setIsPlaying(true)
     setBouncing(true)
     playSound(currentItem)
-    // Reset state after animation
+    // Reset bouncing after animation
     setTimeout(() => {
-      setIsPlaying(false)
       setBouncing(false)
-    }, 1500)
+    }, 300)
   }, [currentItem, playSound])
 
   const handleSpeak = useCallback(() => {
@@ -104,9 +103,8 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
           {/* Play real sound button */}
           <button
             onClick={handlePlaySound}
-            disabled={isPlaying}
-            className={`relative flex h-20 w-20 items-center justify-center rounded-full ${getCategoryColor()} text-white shadow-lg transition-all active:scale-95 disabled:opacity-70 sm:h-24 sm:w-24`}
-            aria-label={`Play ${currentItem.name} sound`}
+            className={`relative flex h-20 w-20 items-center justify-center rounded-full ${getCategoryColor()} text-white shadow-lg transition-all active:scale-95 sm:h-24 sm:w-24`}
+            aria-label={isPlaying ? `Pause ${currentItem.name} sound` : `Play ${currentItem.name} sound`}
           >
             <Music className={`h-10 w-10 sm:h-12 sm:w-12 ${isPlaying ? 'animate-pulse' : ''}`} />
             {isPlaying && (
@@ -137,6 +135,7 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
             <button
               key={idx}
               onClick={() => {
+                stopSound() // Stop audio when navigating via dots
                 setCurrentIndex(idx)
                 setBouncing(true)
                 setTimeout(() => setBouncing(false), 300)
