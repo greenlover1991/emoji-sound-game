@@ -1,18 +1,47 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import type { EmojiItem } from './emoji-data'
 
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentItemId, setCurrentItemId] = useState<string | null>(null)
+  const [currentAudioItem, setCurrentAudioItem] = useState<EmojiItem | null>(null)
+
+  // Initialize the audio element on mount
+  useEffect(() => {
+    if (!audioRef.current) {
+      const audio = new Audio()
+      audio.preload = 'none'
+      audioRef.current = audio
+
+      // Set up event handlers
+      audio.onplay = () => setIsPlaying(true)
+      audio.onpause = () => setIsPlaying(false)
+      audio.onended = () => {
+        setIsPlaying(false)
+        setCurrentAudioItem(null)
+      }
+      audio.onerror = (e) => {
+        console.log('[v0] Audio error:', audio.error?.message || 'Unknown error')
+        setIsPlaying(false)
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+    }
+  }, [])
 
   const playSound = useCallback((item: EmojiItem) => {
-    const itemId = `${item.emoji}-${item.name}`
-    
+    if (!audioRef.current) return
+
     // If the same item is playing, toggle pause/play
-    if (currentItemId === itemId && audioRef.current) {
+    if (currentAudioItem?.name === item.name) {
       if (isPlaying) {
         audioRef.current.pause()
         setIsPlaying(false)
@@ -26,7 +55,7 @@ export function useSound() {
     }
 
     // Stop any currently playing sound
-    if (audioRef.current) {
+    if (audioRef.current.src) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
@@ -37,35 +66,18 @@ export function useSound() {
       // Extract filename from Wikimedia URL
       const filename = item.soundUrl.split('/').pop() || ''
       
-      // Create new audio element for the URL
-      const audio = new Audio()
-      audioRef.current = audio
-      setCurrentItemId(itemId)
+      setCurrentAudioItem(item)
       
-      // Set up event handlers before setting src
-      audio.oncanplaythrough = () => {
-        console.log('[v0] Audio can play through, starting playback')
-        audio.play().catch((error) => {
-          console.log('[v0] Audio play failed:', error.name, error.message)
-        })
-        setIsPlaying(true)
-      }
+      // Set the proxied URL and play
+      audioRef.current.src = `/api/sound?file=${encodeURIComponent(filename)}`
+      audioRef.current.load()
       
-      audio.onended = () => {
-        console.log('[v0] Audio ended')
-        setIsPlaying(false)
-      }
-      
-      audio.onerror = (e) => {
-        console.log('[v0] Audio error:', audio.error?.message || 'Unknown error')
-        setIsPlaying(false)
-      }
-      
-      // Use your proxy route instead of direct Wikimedia URL
-      audio.src = `/api/sound?file=${encodeURIComponent(filename)}`
-      audio.load()
+      // Play once the audio is ready
+      audioRef.current.play().catch((error) => {
+        console.log('[v0] Audio play failed:', error.name, error.message)
+      })
     }
-  }, [isPlaying, currentItemId])
+  }, [isPlaying, currentAudioItem])
 
   const speakName = useCallback((name: string) => {
     // Cancel any ongoing speech
@@ -93,10 +105,9 @@ export function useSound() {
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
-      audioRef.current = null
     }
     setIsPlaying(false)
-    setCurrentItemId(null)
+    setCurrentAudioItem(null)
     window.speechSynthesis.cancel()
   }, [])
 
