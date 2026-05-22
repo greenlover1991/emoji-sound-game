@@ -6,11 +6,13 @@ import type { EmojiItem } from './emoji-data'
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentAudioItem, setCurrentAudioItem] = useState<EmojiItem | null>(null)
+  const [currentItemId, setCurrentItemId] = useState<string | null>(null)
 
   const playSound = useCallback((item: EmojiItem) => {
+    const itemId = `${item.emoji}-${item.name}`
+    
     // If the same item is playing, toggle pause/play
-    if (currentAudioItem?.name === item.name && audioRef.current) {
+    if (currentItemId === itemId && audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
         setIsPlaying(false)
@@ -38,7 +40,7 @@ export function useSound() {
       // Create new audio element for the URL
       const audio = new Audio()
       audioRef.current = audio
-      setCurrentAudioItem(item)
+      setCurrentItemId(itemId)
       
       // Set up event handlers before setting src
       audio.oncanplaythrough = () => {
@@ -63,7 +65,7 @@ export function useSound() {
       audio.src = `/api/sound?file=${encodeURIComponent(filename)}`
       audio.load()
     }
-  }, [isPlaying, currentAudioItem])
+  }, [isPlaying, currentItemId])
 
   const speakName = useCallback((name: string) => {
     // Cancel any ongoing speech
@@ -91,9 +93,10 @@ export function useSound() {
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
+      audioRef.current = null
     }
     setIsPlaying(false)
-    setCurrentAudioItem(null)
+    setCurrentItemId(null)
     window.speechSynthesis.cancel()
   }, [])
 
