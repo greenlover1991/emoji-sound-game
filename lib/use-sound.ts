@@ -2,11 +2,13 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react'
 import type { EmojiItem } from './emoji-data'
+import { useCast } from './use-cast'
 
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentAudioItem, setCurrentAudioItem] = useState<EmojiItem | null>(null)
+  const { isConnected, castAudio } = useCast()
 
   // Initialize the audio element on mount
   useEffect(() => {
@@ -65,19 +67,41 @@ export function useSound() {
       
       // Extract filename from Wikimedia URL
       const filename = item.soundUrl.split('/').pop() || ''
+      const audioUrl = `/api/sound?file=${encodeURIComponent(filename)}`
       
       setCurrentAudioItem(item)
-      
-      // Set the proxied URL and play
-      audioRef.current.src = `/api/sound?file=${encodeURIComponent(filename)}`
-      audioRef.current.load()
-      
-      // Play once the audio is ready
-      audioRef.current.play().catch((error) => {
-        console.log('[v0] Audio play failed:', error.name, error.message)
-      })
+      setIsPlaying(true)
+
+      // Helper to play audio locally
+      const playAudioLocally = () => {
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl
+          audioRef.current.load()
+          audioRef.current.play().catch((error) => {
+            console.log('[v0] Audio play failed:', error.name, error.message)
+            setIsPlaying(false)
+          })
+        }
+      }
+
+      // If Cast device is connected, try to cast first
+      if (isConnected) {
+        console.log('[v0] Casting to Google Home...')
+        castAudio(audioUrl, {
+          name: item.name,
+          emoji: item.emoji,
+        }).then((success) => {
+          if (!success) {
+            console.log('[v0] Cast failed, falling back to local audio')
+            playAudioLocally()
+          }
+        })
+      } else {
+        // No Cast device, play locally
+        playAudioLocally()
+      }
     }
-  }, [isPlaying, currentAudioItem])
+  }, [isPlaying, currentAudioItem, isConnected, castAudio])
 
   const speakName = useCallback((name: string) => {
     // Cancel any ongoing speech

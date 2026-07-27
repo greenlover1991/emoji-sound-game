@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, Music, Play, Home } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Music, Play, Home, Settings, Wifi } from 'lucide-react'
 import Link from 'next/link'
 import type { Category } from '@/lib/emoji-data'
 import { useSound } from '@/lib/use-sound'
+import { useCast } from '@/lib/use-cast'
 
 interface EmojiPlayerProps {
   category: Category
@@ -15,6 +16,7 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [bouncing, setBouncing] = useState(false)
   const { playSound, speakName, stopSound, isPlaying } = useSound()
+  const { isConnected } = useCast()
 
   const currentItem = category.items[currentIndex]
 
@@ -81,7 +83,16 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
           <span className="text-3xl">{category.emoji}</span>
           <h1 className="text-xl font-bold text-foreground">{category.name}</h1>
         </div>
-        <div className="h-14 w-14" /> {/* Spacer for centering */}
+        <Link
+          href="/settings"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform active:scale-95"
+          aria-label="Open settings"
+        >
+          <Settings className="h-7 w-7" />
+          {isConnected && (
+            <Wifi className="absolute top-1 right-1 h-4 w-4 text-green-500" />
+          )}
+        </Link>
       </header>
 
       {/* Main content */}
@@ -101,16 +112,22 @@ export function EmojiPlayer({ category }: EmojiPlayerProps) {
         {/* Sound buttons */}
         <div className="flex items-center gap-4">
           {/* Play real sound button */}
-          <button
-            onClick={handlePlaySound}
-            className={`relative flex h-20 w-20 items-center justify-center rounded-full ${getCategoryColor()} text-white shadow-lg transition-all active:scale-95 sm:h-24 sm:w-24`}
-            aria-label={isPlaying ? `Pause ${currentItem.name} sound` : `Play ${currentItem.name} sound`}
-          >
-            <Music className={`h-10 w-10 sm:h-12 sm:w-12 ${isPlaying ? 'animate-pulse' : ''}`} />
-            {isPlaying && (
-              <span className="absolute inset-0 animate-ping rounded-full bg-current opacity-30" />
-            )}
-          </button>
+          <div className="relative group">
+            <button
+              onClick={handlePlaySound}
+              className={`relative flex h-20 w-20 items-center justify-center rounded-full ${getCategoryColor()} text-white shadow-lg transition-all active:scale-95 sm:h-24 sm:w-24`}
+              aria-label={isPlaying ? `Pause ${currentItem.name} sound` : `Play ${currentItem.name} sound`}
+            >
+              <Music className={`h-10 w-10 sm:h-12 sm:w-12 ${isPlaying ? 'animate-pulse' : ''}`} />
+              {isPlaying && (
+                <span className="absolute inset-0 animate-ping rounded-full bg-current opacity-30" />
+              )}
+            </button>
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 rounded-lg bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              {isConnected ? 'Playing on Google Home' : 'Playing locally'}
+            </div>
+          </div>
 
           {/* Speak name button */}
           <button

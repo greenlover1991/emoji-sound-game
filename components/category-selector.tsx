@@ -1,13 +1,29 @@
 'use client'
 
 import Link from 'next/link'
+import { Settings } from 'lucide-react'
 import { categories } from '@/lib/emoji-data'
+import { useCast } from '@/lib/use-cast'
 
 export function CategorySelector() {
+  const { isConnected } = useCast()
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background no-select">
       {/* Header */}
-      <header className="flex flex-col items-center gap-2 px-4 pt-12 pb-8">
+      <header className="flex flex-col items-center gap-2 px-4 pt-8 pb-8 relative">
+        <div className="absolute top-4 right-4">
+          <Link
+            href="/settings"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform active:scale-95 relative"
+            aria-label="Open settings"
+          >
+            <Settings className="h-6 w-6" />
+            {isConnected && (
+              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-green-500" />
+            )}
+          </Link>
+        </div>
         <h1 className="text-center text-4xl font-bold text-foreground sm:text-5xl">
           Sound Playground
         </h1>

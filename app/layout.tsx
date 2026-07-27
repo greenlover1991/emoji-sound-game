@@ -56,6 +56,15 @@ export default function RootLayout({
       <body className={`${nunito.variable} font-sans antialiased`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.onGCastApiAvailable = function(isAvailable) {
+                console.log('[v0] Cast API availability:', isAvailable);
+              };
+            `,
+          }}
+        />
       </body>
     </html>
   )
